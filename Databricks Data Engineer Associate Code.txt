@@ -1,0 +1,148 @@
+--Extract data from a single file
+SELECT * FROM file_format.`/path/to/file`
+
+/*variable substitution syntax: ${your variable} used in Databricks SQL. The value will be dynamically inserted into the string at runtime.*/
+SELECT * FROM json.`${da.paths.datasets}/raw/events-kafka/001.json`
+
+/*This is the file path: dbfs:/mnt/demo-datasets/bookstore/customers-json/export_001.json, we made ${dataset.bookstore} a variable to represent part of the path */ 
+SELECT * FROM json.`${dataset.bookstore}/customers-json/export_001.json`
+SELECT * FROM text.`${dataset.bookstore}/customers-json`
+SELECT * FROM csv.`${dataset.bookstore}/books-csv`
+
+--From a directory of files:
+SELECT * FROM json.`${da.paths.datasets}/raw/events-kafka`
+SELECT * FROM json.`${dataset.bookstore}/customers-json/export_*.json`
+
+
+
+
+--Create a view, a temporary view, and a CTE as a reference to a file
+CREATE OR REPLACE TEMP VIEW books_tmp_vw
+   (book_id STRING, title STRING, author STRING, category STRING, price DOUBLE)
+USING CSV
+OPTIONS (
+  path = "${dataset.bookstore}/books-csv/export_*.csv",
+  header = "true",
+  delimiter = ";"
+);
+
+CREATE TABLE books AS
+  SELECT * FROM books_tmp_vw;
+
+WITH books_CTE AS (
+    SELECT
+        *
+    FROM books_tmp_vw
+)
+
+--create a table from an exsting extrnal CSV file
+CREATE TABLE csv_table
+USING CSV
+OPTIONS (
+  path '/path/to/your/csv/file.csv',
+  header 'true',
+  delimiter ','
+);
+
+
+--**Identify how to create a database in a custom location
+CREATE DATABASE IF NOT EXISTS ${da.db_name}_custom_location LOCATION '${da.paths.working_dir}/_custom_location.db'
+/*custom location is the name of the database*/
+
+
+--Create a table from a JDBC connection
+CREATE DATABASE IF NOT EXISTS jdbc_db;
+
+%sql
+CREATE TABLE jdbc_table
+USING jdbc
+OPTIONS (
+  url 'jdbc:mysql://your_database_hostname:3306/your_database_name',
+  user 'your_username',
+  password 'your_password',
+  dbtable '(SELECT * FROM your_table_name)'
+);
+
+
+
+
+--**Create a table using CTAS statement
+CREATE TABLE customers AS
+SELECT * FROM json.`${dataset.bookstore}/customers-json`;
+
+
+
+
+--Identify the location of a database names custoemr 360
+DESCRIBE DATABASE customer360;
+
+
+--**Identify a table location using the extented description
+DESCRIBE EXTENDED managed_table_in_db_with_custom_location;
+
+
+
+--Identify that tables from external sources are not Delta Lake tables.
+DESCRIBE EXTENDED your_table_name; /*search for tables that are not type external and provider is not delta*/
+
+
+--Identify how the count_if function and the count where x is null can be used
+
+
+--Identify how the count(row) skips NULL values.
+
+--Deduplicate rows from an existing Delta Lake table.
+
+--Create a new table from an existing table while removing duplicate rows.
+
+
+
+
+--Deduplicate a row based on specific columns.
+
+--Validate that the primary key is unique across all rows.
+
+--Validate that a field is associated with just one unique value in another field.
+
+
+--Validate that a value is not present in a specific field.
+
+--Cast a column to a timestamp.
+
+--Extract calendar data from a timestamp.
+
+--Extract a specific pattern from an existing string column.
+
+--Utilize the dot syntax to extract nested data fields.
+
+--Identify the benefits of using array functions.
+
+--Parse JSON strings into structs.
+
+--Identify which result will be returned based on a join query.
+
+--Identify a scenario to use the explode function versus the flatten function
+
+--Identify the PIVOT clause as a way to convert data from a long format to a wide format.
+
+--Define a SQL UDF.
+
+--Identify the location of a function.
+
+--Describe the security model for sharing SQL UDFs.
+
+--Use CASE/WHEN in SQL code.
+
+--Leverage CASE/WHEN for custom control flow.
+
+
+--Create a new table containing the names of customers that live in france with consideration of PII
+CREATE OR REPLACE TABLE customersInFrance
+COMMENT "Contains PII"
+AS
+SELECT
+    id
+    ,first_name
+    ,last_name
+FROM customerLocations
+WHERE country = 'FRANCE';
