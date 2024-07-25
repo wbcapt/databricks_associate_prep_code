@@ -1,4 +1,8 @@
---Extract data from a single file
+--PART II Code
+
+/*===================================================================
+Extract data from a single file
+=====================================================================*/
     SELECT * FROM file_format.`/path/to/file`
 
 /*variable substitution syntax: ${your variable} used in Databricks SQL. The value will be dynamically inserted into the string at runtime.*/
@@ -9,14 +13,18 @@
     SELECT * FROM text.`${dataset.bookstore}/customers-json`
     SELECT * FROM csv.`${dataset.bookstore}/books-csv`
 
+
+/*===================================================================
 --From a directory of files:
+=====================================================================*/
     SELECT * FROM json.`${da.paths.datasets}/raw/events-kafka`
     SELECT * FROM json.`${dataset.bookstore}/customers-json/export_*.json`
 
 
 
-
---Create a view, a temporary view, and a CTE as a reference to a file
+/*===================================================================
+Create a view, a temporary view, and a CTE as a reference to a file
+======================================================================*/
     CREATE OR REPLACE TEMP VIEW books_tmp_vw
       (book_id STRING, title STRING, author STRING, category STRING, price DOUBLE)
     USING CSV
@@ -35,7 +43,9 @@
         FROM books_tmp_vw
     )
 
---create a table from an exsting extrnal CSV file
+/*===================================================================
+create a table from an exsting extrnal CSV file
+======================================================================*/
     CREATE TABLE csv_table
     USING CSV
     OPTIONS (
@@ -44,8 +54,9 @@
       delimiter ','
     );
 
-
---**Creating Temp VIEWS
+/*===================================================================
+**Creating Temp VIEWS
+======================================================================*/
     CREATE TEMP VIEW temp_view_phones_brands
     AS  SELECT DISTINCT brand
         FROM smartphones;
@@ -53,22 +64,27 @@
     SELECT * FROM temp_view_phones_brands;
 
 
---**Creat Global Temp VIEWS
+/*===================================================================
+**Creat Global Temp VIEWS
+======================================================================*/
     CREATE GLOBAL TEMP VIEW global_temp_view_latest_phones
     AS SELECT * FROM smartphones
         WHERE year > 2020
         ORDER BY year DESC;   
-  
 
---**Identify how to create a database in a custom location
+
+/*===================================================================
+**Identify how to create a database in a custom location
+======================================================================*/
     CREATE DATABASE IF NOT EXISTS ${da.db_name}_custom_location LOCATION '${da.paths.working_dir}/_custom_location.db'
     /*custom location is the name of the database*/
 
 
 
 
-
---Create a table from a JDBC connection
+/*===================================================================
+Create a table from a JDBC connection
+======================================================================*/
     CREATE DATABASE IF NOT EXISTS jdbc_db;
 
     %sql
@@ -83,81 +99,118 @@
 
 
 
-
---**Create a table using CTAS statement
+/*===================================================================
+**Create a table using CTAS statement
+======================================================================*/
     CREATE TABLE customers AS
     SELECT * FROM json.`${dataset.bookstore}/customers-json`;
 
 
 
-
---Identify the location of a database names custoemr 360
+/*===================================================================
+Identify the location of a database names custoemr 360
+======================================================================*/
     DESCRIBE DATABASE customer360;
 
 
---**Identify a table location using the extented description
+
+/*===================================================================
+**Identify a table location using the extented description
+======================================================================*/
     DESCRIBE EXTENDED managed_table_in_db_with_custom_location;
 
 
 
---Identify that tables from external sources are not Delta Lake tables.
+/*===================================================================
+Identify that tables from external sources are not Delta Lake tables.
+======================================================================*/
     DESCRIBE EXTENDED your_table_name; /*search for tables that are not type external and provider is not delta*/
 
 
---Identify how the count_if function and the count where x is null can be used
+
+/*====================================================================================
+Identify how the count_if function and the count where x is null can be used
+=====================================================================================*/
     SELECT 
         COUNT(*) AS null_mileage_count
     FROM vehicles
     WHERE mileage IS NULL;
 
---Identify how the count(row) skips NULL values.
 
 
---Deduplicate rows from an existing Delta Lake table.
-df = spark.read.format("delta").load(table_path)
-deduplicated_df = df.dropDuplicates()
-deduplicated_df.write.format("delta").mode("overwrite").save(table_path)
+/*===================================================================
+Identify how the count(row) skips NULL values.
+======================================================================*/
 
 
+/*===================================================================
+Deduplicate rows from an existing Delta Lake table.
+======================================================================*/
+        df = spark.read.format("delta").load(table_path)
+        deduplicated_df = df.dropDuplicates()
+        deduplicated_df.write.format("delta").mode("overwrite").save(table_path)
+
+
+/*===================================================================
 --Create a new table from an existing table while removing duplicate rows.
 MERGE operation
 
 
-
---Deduplicate a row based on specific columns.
+/*===================================================================
+Deduplicate a row based on specific columns.
+======================================================================*/
     deduplicated_df = df.dropDuplicates(["column1", "column2"])
 
     SELECT COUNT(DISTINCT(user_id, user_first_touch_timestamp))
     FROM users_dirty
     WHERE user_id IS NOT NULL
 
-
---Validate that the primary key is unique across all rows.
+/*===================================================================
+Validate that the primary key is unique across all rows.
+======================================================================*/
 COUNT DISTINCT
 
---Validate that a field is associated with just one unique value in another field.
+
+/*===================================================================
+Validate that a field is associated with just one unique value in another field.
+======================================================================*/
 INNER JOIN COUNT DISTINCT
 
 
---Validate that a value is not present in a specific field.
+/*===================================================================
+Validate that a value is not present in a specific field.
+======================================================================*/
 
 
+/*======================================================================
 --Cast a column to a timestamp.
+======================================================================*/
 CAST(xyz AS DATETIME)
 
---Extract calendar data from a timestamp.
+
+/*===================================================================
+Extract calendar data from a timestamp.
+===================================================================*/
 CAST(xyz_field AS DATE)
 
---Extract a specific pattern from an existing string column.
+
+/*===================================================================
+Extract a specific pattern from an existing string column.
+=====================================================================*/
+
+/*===================================================================
+Utilize the dot syntax to extract nested data fields.
+====================================================================*/
 
 
---Utilize the dot syntax to extract nested data fields.
-
-
+/*===================================================================
 --Identify the benefits of using array functions.
+===================================================================*/
 
 
+/*=====================================================================
 --Parse JSON strings into structs.
+=====================================================================*/
 CREATE OR REPLACE TEMP VIEW parsed_customers AS
   SELECT 
       customer_id
@@ -173,13 +226,17 @@ CREATE OR REPLACE TEMP VIEW parsed_customers AS
   
 SELECT * FROM parsed_customers
 
---Identify which result will be returned based on a join query.
+
+/*=========================================================================================
+Identify which result will be returned based on a join query.
+=========================================================================================*/
 /*DE 4.7 UNION, LEFT, RIGHT, INNER*/
 
 
 
-
---Identify a scenario to use the explode function versus the flatten function
+/*==============================================================================================
+Identify a scenario to use the explode function versus the flatten function
+==============================================================================================*/
     /*when customer_ID has many books grouped as a dictionary, you can explode to different lines*/
     SELECT order_id, customer_id, explode(books) AS book 
     FROM orders
@@ -193,8 +250,9 @@ SELECT * FROM parsed_customers
 
 
 
-
---Identify the PIVOT clause as a way to convert data from a long format to a wide format.
+/*=======================================================================================
+Identify the PIVOT clause as a way to convert data from a long format to a wide format.
+=======================================================================================*/
     CREATE OR REPLACE TABLE transactions AS
 
     SELECT * FROM (
@@ -211,22 +269,32 @@ SELECT * FROM parsed_customers
     );
 
 
+
+/*===========================================================================
 --Define a SQL UDF.
+=============================================================================*/
     CREATE OR REPLACE FUNCTION yelling(text STRING)
     RETURNS STRING
     RETURN concat(upper(text), "!!!")
 
---Identify the location of a function.
+
+/*=================================================================================================
+Identify the location of a function.
+====================================================================================================*/
     DESCRIBE FUNCTION EXTENDED get_url
 
 
+/*===================================================================
 --Describe the security model for sharing SQL UDFs.
 
+
+/*===================================================================
 --Use CASE/WHEN in SQL code.
 
 
-
---Leverage CASE/WHEN for custom control flow.
+/*====================================================================
+Leverage CASE/WHEN for custom control flow.
+=======================================================================*/
     CREATE FUNCTION site_type(email STRING)
     RETURNS STRING
     RETURN CASE 
@@ -236,7 +304,9 @@ SELECT * FROM parsed_customers
               ELSE concat("Unknow extenstion for domain: ", split(email, "@")[1])
           END;
 
---Create a new table containing the names of customers that live in france with consideration of PII
+/*===================================================================================================
+Create a new table containing the names of customers that live in france with consideration of PII
+====================================================================================================*/
     CREATE OR REPLACE TABLE customersInFrance
     COMMENT "Contains PII"
     AS
@@ -248,9 +318,12 @@ SELECT * FROM parsed_customers
     WHERE country = 'FRANCE';
 
 
+/*========================================================================================================================================================================*/
 
 Part III Strucuted Streaming
---gold table 
+/*======================================================================
+gold table (aggergations)
+======================================================================*/
         (spark.table("sales")
             .groupBy("store")
             .agg(sum("sales")
@@ -260,7 +333,10 @@ Part III Strucuted Streaming
             .outputMode("completed")
             .table("newSales")
 
---silver table
+/*======================================================================
+silver table 
+======================================================================*/
+--note the filtering and lack of completed outputMode
         (spark.table("sales")
             .filter(col("units")>0
         )
@@ -269,12 +345,27 @@ Part III Strucuted Streaming
             .outputMode("append")
             .table("newSales")
 
---bronze table
+/*======================================================================
+bronze table 
+======================================================================*/
+--Note the readStream.load
+
         (spark.readStream.load(rawSalesLocation)
             .writestream
             .option("checkpointLocation",checkpointPath)
             .outputMode("append")
             .table("newSales")
-            
 
+/*===================================================================================================================
+Structured Streaming job to read from a table, manipulate the data, and then perform a streaming write into a new table
+If the data engineer wants the query to only execute a micro batch every 5 seconds, what is the code
+======================================================================================================================*/
+        (spark.table("sales")
+            .withColumn("avg_price", col("sales")/col("units"))
+            .writeStream
+            .option("checkpointLocation",checkpointPath)
+            .outputMode("complete")
+            .trigger(processingTime="5 minutes")
+            .table("new_sales")
+        )
             
