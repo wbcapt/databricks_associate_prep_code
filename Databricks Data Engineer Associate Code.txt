@@ -246,3 +246,35 @@ SELECT * FROM parsed_customers
         ,last_name
     FROM customerLocations
     WHERE country = 'FRANCE';
+
+
+
+Part III Strucuted Streaming
+--gold table 
+        (spark.table("sales")
+            .groupBy("store")
+            .agg(sum("sales")
+        )
+            .writeStream
+            .option("checkpointLocation")
+            .outputMode("completed")
+            .table("newSales")
+
+--silver table
+        (spark.table("sales")
+            .filter(col("units")>0
+        )
+            .writestream
+            .option("checkpointLocation",checkpointPath)
+            .outputMode("append")
+            .table("newSales")
+
+--bronze table
+        (spark.readStream.load(rawSalesLocation)
+            .writestream
+            .option("checkpointLocation",checkpointPath)
+            .outputMode("append")
+            .table("newSales")
+            
+
+            
