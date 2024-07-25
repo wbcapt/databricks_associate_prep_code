@@ -361,11 +361,26 @@ Structured Streaming job to read from a table, manipulate the data, and then per
 If the data engineer wants the query to only execute a micro batch every 5 seconds, what is the code
 ======================================================================================================================*/
         (spark.table("sales")
-            .withColumn("avg_price", col("sales")/col("units"))
+            .withColumn("avg_price", col("sales")/col("units")) <adds new column named avg_price to the dataframe
             .writeStream
             .option("checkpointLocation",checkpointPath)
             .outputMode("complete")
             .trigger(processingTime="5 minutes")
             .table("new_sales")
         )
-            
+
+/*=================================================================================================
+Create Delta Live Table
+=================================================================================================*/
+CREATE LIVE TABLE AS 
+SELECT
+    col_1
+    ,col_2
+FROM
+
+
+CRATE STREAMING LIVE TABLE AS
+SELECT
+    col_1
+    ,col_2
+FROM
