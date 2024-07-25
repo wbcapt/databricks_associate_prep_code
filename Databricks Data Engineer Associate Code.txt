@@ -1,148 +1,248 @@
 --Extract data from a single file
-SELECT * FROM file_format.`/path/to/file`
+    SELECT * FROM file_format.`/path/to/file`
 
 /*variable substitution syntax: ${your variable} used in Databricks SQL. The value will be dynamically inserted into the string at runtime.*/
-SELECT * FROM json.`${da.paths.datasets}/raw/events-kafka/001.json`
+    SELECT * FROM json.`${da.paths.datasets}/raw/events-kafka/001.json`
 
 /*This is the file path: dbfs:/mnt/demo-datasets/bookstore/customers-json/export_001.json, we made ${dataset.bookstore} a variable to represent part of the path */ 
-SELECT * FROM json.`${dataset.bookstore}/customers-json/export_001.json`
-SELECT * FROM text.`${dataset.bookstore}/customers-json`
-SELECT * FROM csv.`${dataset.bookstore}/books-csv`
+    SELECT * FROM json.`${dataset.bookstore}/customers-json/export_001.json`
+    SELECT * FROM text.`${dataset.bookstore}/customers-json`
+    SELECT * FROM csv.`${dataset.bookstore}/books-csv`
 
 --From a directory of files:
-SELECT * FROM json.`${da.paths.datasets}/raw/events-kafka`
-SELECT * FROM json.`${dataset.bookstore}/customers-json/export_*.json`
+    SELECT * FROM json.`${da.paths.datasets}/raw/events-kafka`
+    SELECT * FROM json.`${dataset.bookstore}/customers-json/export_*.json`
 
 
 
 
 --Create a view, a temporary view, and a CTE as a reference to a file
-CREATE OR REPLACE TEMP VIEW books_tmp_vw
-   (book_id STRING, title STRING, author STRING, category STRING, price DOUBLE)
-USING CSV
-OPTIONS (
-  path = "${dataset.bookstore}/books-csv/export_*.csv",
-  header = "true",
-  delimiter = ";"
-);
+    CREATE OR REPLACE TEMP VIEW books_tmp_vw
+      (book_id STRING, title STRING, author STRING, category STRING, price DOUBLE)
+    USING CSV
+    OPTIONS (
+      path = "${dataset.bookstore}/books-csv/export_*.csv",
+      header = "true",
+      delimiter = ";"
+    );
 
-CREATE TABLE books AS
-  SELECT * FROM books_tmp_vw;
+    CREATE TABLE books AS
+      SELECT * FROM books_tmp_vw;
 
-WITH books_CTE AS (
-    SELECT
-        *
-    FROM books_tmp_vw
-)
+    WITH books_CTE AS (
+        SELECT
+            *
+        FROM books_tmp_vw
+    )
 
 --create a table from an exsting extrnal CSV file
-CREATE TABLE csv_table
-USING CSV
-OPTIONS (
-  path '/path/to/your/csv/file.csv',
-  header 'true',
-  delimiter ','
-);
+    CREATE TABLE csv_table
+    USING CSV
+    OPTIONS (
+      path '/path/to/your/csv/file.csv',
+      header 'true',
+      delimiter ','
+    );
 
+
+--**Creating Temp VIEWS
+    CREATE TEMP VIEW temp_view_phones_brands
+    AS  SELECT DISTINCT brand
+        FROM smartphones;
+
+    SELECT * FROM temp_view_phones_brands;
+
+
+--**Creat Global Temp VIEWS
+    CREATE GLOBAL TEMP VIEW global_temp_view_latest_phones
+    AS SELECT * FROM smartphones
+        WHERE year > 2020
+        ORDER BY year DESC;   
+  
 
 --**Identify how to create a database in a custom location
-CREATE DATABASE IF NOT EXISTS ${da.db_name}_custom_location LOCATION '${da.paths.working_dir}/_custom_location.db'
-/*custom location is the name of the database*/
+    CREATE DATABASE IF NOT EXISTS ${da.db_name}_custom_location LOCATION '${da.paths.working_dir}/_custom_location.db'
+    /*custom location is the name of the database*/
+
+
+
 
 
 --Create a table from a JDBC connection
-CREATE DATABASE IF NOT EXISTS jdbc_db;
+    CREATE DATABASE IF NOT EXISTS jdbc_db;
 
-%sql
-CREATE TABLE jdbc_table
-USING jdbc
-OPTIONS (
-  url 'jdbc:mysql://your_database_hostname:3306/your_database_name',
-  user 'your_username',
-  password 'your_password',
-  dbtable '(SELECT * FROM your_table_name)'
-);
+    %sql
+    CREATE TABLE jdbc_table
+    USING jdbc
+    OPTIONS (
+      url 'jdbc:mysql://your_database_hostname:3306/your_database_name',
+      user 'your_username',
+      password 'your_password',
+      dbtable '(SELECT * FROM your_table_name)'
+    );
 
 
 
 
 --**Create a table using CTAS statement
-CREATE TABLE customers AS
-SELECT * FROM json.`${dataset.bookstore}/customers-json`;
+    CREATE TABLE customers AS
+    SELECT * FROM json.`${dataset.bookstore}/customers-json`;
 
 
 
 
 --Identify the location of a database names custoemr 360
-DESCRIBE DATABASE customer360;
+    DESCRIBE DATABASE customer360;
 
 
 --**Identify a table location using the extented description
-DESCRIBE EXTENDED managed_table_in_db_with_custom_location;
+    DESCRIBE EXTENDED managed_table_in_db_with_custom_location;
 
 
 
 --Identify that tables from external sources are not Delta Lake tables.
-DESCRIBE EXTENDED your_table_name; /*search for tables that are not type external and provider is not delta*/
+    DESCRIBE EXTENDED your_table_name; /*search for tables that are not type external and provider is not delta*/
 
 
 --Identify how the count_if function and the count where x is null can be used
-
+    SELECT 
+        COUNT(*) AS null_mileage_count
+    FROM vehicles
+    WHERE mileage IS NULL;
 
 --Identify how the count(row) skips NULL values.
 
+
 --Deduplicate rows from an existing Delta Lake table.
+df = spark.read.format("delta").load(table_path)
+deduplicated_df = df.dropDuplicates()
+deduplicated_df.write.format("delta").mode("overwrite").save(table_path)
+
 
 --Create a new table from an existing table while removing duplicate rows.
-
+MERGE operation
 
 
 
 --Deduplicate a row based on specific columns.
+    deduplicated_df = df.dropDuplicates(["column1", "column2"])
+
+    SELECT COUNT(DISTINCT(user_id, user_first_touch_timestamp))
+    FROM users_dirty
+    WHERE user_id IS NOT NULL
+
 
 --Validate that the primary key is unique across all rows.
+COUNT DISTINCT
 
 --Validate that a field is associated with just one unique value in another field.
+INNER JOIN COUNT DISTINCT
 
 
 --Validate that a value is not present in a specific field.
 
+
 --Cast a column to a timestamp.
+CAST(xyz AS DATETIME)
 
 --Extract calendar data from a timestamp.
+CAST(xyz_field AS DATE)
 
 --Extract a specific pattern from an existing string column.
 
+
 --Utilize the dot syntax to extract nested data fields.
+
 
 --Identify the benefits of using array functions.
 
+
 --Parse JSON strings into structs.
+CREATE OR REPLACE TEMP VIEW parsed_customers AS
+  SELECT 
+      customer_id
+      ,from_json(profile, 
+                  schema_of_json('{"first_name":"Thomas",
+                              "last_name":"Lane","gender":"Male",
+                              "address":{"street":"06 Boulevard Victor Hugo",
+                              "city":"Paris","country":"France"}}'
+                              )
+                  ) 
+        AS profile_struct
+  FROM customers;
+  
+SELECT * FROM parsed_customers
 
 --Identify which result will be returned based on a join query.
+/*DE 4.7 UNION, LEFT, RIGHT, INNER*/
+
+
+
 
 --Identify a scenario to use the explode function versus the flatten function
+    /*when customer_ID has many books grouped as a dictionary, you can explode to different lines*/
+    SELECT order_id, customer_id, explode(books) AS book 
+    FROM orders
+
+    /*when the values are [["B08,"B02"],["B09"],["B03","B12"]) for example. Flatten >> ["B08","B02","B09"..."B12"]*/
+    SELECT customer_id,
+      collect_set(books.book_id) As before_flatten,
+      array_distinct(flatten(collect_set(books.book_id))) AS after_flatten
+    FROM orders
+    GROUP BY customer_id
+
+
+
 
 --Identify the PIVOT clause as a way to convert data from a long format to a wide format.
+    CREATE OR REPLACE TABLE transactions AS
+
+    SELECT * FROM (
+      SELECT
+        customer_id,
+        book.book_id AS book_id,
+        book.quantity AS quantity
+      FROM orders_enriched
+    ) PIVOT (
+      sum(quantity) FOR book_id in (
+        'B01', 'B02', 'B03', 'B04', 'B05', 'B06',
+        'B07', 'B08', 'B09', 'B10', 'B11', 'B12'
+      )
+    );
+
 
 --Define a SQL UDF.
+    CREATE OR REPLACE FUNCTION yelling(text STRING)
+    RETURNS STRING
+    RETURN concat(upper(text), "!!!")
 
 --Identify the location of a function.
+    DESCRIBE FUNCTION EXTENDED get_url
+
 
 --Describe the security model for sharing SQL UDFs.
 
 --Use CASE/WHEN in SQL code.
 
---Leverage CASE/WHEN for custom control flow.
 
+
+--Leverage CASE/WHEN for custom control flow.
+    CREATE FUNCTION site_type(email STRING)
+    RETURNS STRING
+    RETURN CASE 
+              WHEN email like "%.com" THEN "Commercial business"
+              WHEN email like "%.org" THEN "Non-profits organization"
+              WHEN email like "%.edu" THEN "Educational institution"
+              ELSE concat("Unknow extenstion for domain: ", split(email, "@")[1])
+          END;
 
 --Create a new table containing the names of customers that live in france with consideration of PII
-CREATE OR REPLACE TABLE customersInFrance
-COMMENT "Contains PII"
-AS
-SELECT
-    id
-    ,first_name
-    ,last_name
-FROM customerLocations
-WHERE country = 'FRANCE';
+    CREATE OR REPLACE TABLE customersInFrance
+    COMMENT "Contains PII"
+    AS
+    SELECT
+        id
+        ,first_name
+        ,last_name
+    FROM customerLocations
+    WHERE country = 'FRANCE';
